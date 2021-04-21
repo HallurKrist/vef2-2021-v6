@@ -1,4 +1,34 @@
 
 .film {
-  
+  &__info {
+    display: flex;
+    margin-top: 2rem;
+  }
+
+  &__crawl {
+    white-space: pre-line;
+    width: 30%;
+  }
+
+  &__char {
+    width: 100%;
+
+  &__links {
+        display: flex;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    &__link {
+      margin-right: 1rem;
+    }
+  }
+
+  &__end {
+    width: 100%;
+    height: 2px;
+    background-color: lightgrey;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
 }

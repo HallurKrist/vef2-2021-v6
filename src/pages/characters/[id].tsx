@@ -4,7 +4,7 @@ import Head from 'next/head';
 import { ErrorPage } from '../../containers/Error';
 import { characterFragment } from '../../graphql/characterFragment';
 import { fetchSwapi } from '../../lib/swapi';
-import { ICharacter } from '../../types';
+import { ICharacter, ICharacterData } from '../../types';
 
 import { Layout } from '../../components/layout/Layout';
 import { Person } from '../../components/person/Person';
@@ -38,8 +38,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({ params
   const id = params?.id as string | undefined;
 
   const query = `
-    query($id: ID!) {
-      # TODO sækja person
+    query getCharacter($id: ID!) {
+      person(id: $id) {
+        ...character
+      }
     }
     ${characterFragment}
   `;
@@ -47,8 +49,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({ params
   let person = null;
 
   if (id) {
-    // TODO EKKI any
-    const result = await fetchSwapi<any>(query, { id });
+    const result = await fetchSwapi<ICharacterData>(query, { id });
 
     person = result.person ?? null;
   }

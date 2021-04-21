@@ -4,38 +4,41 @@ import Link from 'next/link';
 
 import s from './Characters.module.scss';
 import { Button } from '../button/Button';
-import { ICharacter } from '../../types';
+import { ICharacter, IPeopleEdges, IPeopleResponse } from '../../types';
+import { fetchCharacters } from '../../lib/swapi';
 
 type Props = {
+  characters_: IPeopleEdges;
 };
 
-/**
- * Hjálpar týpa ef við erum að filtera burt hugsanleg null gildi:
- *
- * const items: T = itemsWithPossiblyNull
- *  .map((item) => {
- *    if (!item) {
- *      return null;
- *    }
- *    return item;
- *  })
- *  .filter((Boolean as unknown) as ExcludesFalse);
- * items verður Array<T> en ekki Array<T | null>
- */
-type ExcludesFalse = <T>(x: T | null | undefined | false) => x is T;
+// Notaði ekki Excludes fallið
 
-export function Characters({ }: Props): JSX.Element {
-  // TODO meðhöndla loading state, ekki þarf sérstaklega að villu state
+export function Characters({ characters_ }: Props): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
-
-  // TODO setja grunngögn sem koma frá server
-  const [characters, setCharacters] = useState<Array<ICharacter>>([]);
-
-  const [nextPage, setNextPage] = useState<string | null>(null);
+  const [characters, setCharacters] = useState<Array<ICharacter>>(
+    characters_.edges.map((edge) => edge.node),
+  );
+  const [nextPage, setNextPage] = useState<string | null>(characters_.pageInfo.endCursor);
+  const [isNextPage, setIsNextPage] = useState<boolean>(true);
 
   const fetchMore = async (): Promise<void> => {
-    // TODO sækja gögn frá /pages/api/characters.ts (gegnum /api/characters), ef það eru fleiri
-    // (sjá pageInfo.hasNextPage) með cursor úr pageInfo.endCursor
+    setLoading(true);
+
+    if (isNextPage) {
+      const res = (await fetch(`/api/characters?after=${nextPage}`));
+      if (res.ok) {
+        const nextPageCharacters: IPeopleResponse = await fetchCharacters(nextPage ?? '');
+        const newCharacters: ICharacter[] = nextPageCharacters.allPeople.edges.map(
+          (edge) => edge.node,
+        );
+
+        setNextPage(nextPageCharacters?.allPeople?.pageInfo?.endCursor ?? null);
+        setIsNextPage(nextPageCharacters?.allPeople?.pageInfo?.hasNextPage ?? true);
+        setCharacters(characters.concat(newCharacters));
+      }
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -48,7 +51,9 @@ export function Characters({ }: Props): JSX.Element {
         ))}
       </ul>
 
-      <Button disabled={loading} onClick={fetchMore}>Fetch more</Button>
+      {loading && <p>loading...</p>}
+
+      {isNextPage && <Button disabled={loading} onClick={fetchMore}>Fetch more</Button>}
     </section>
   );
 }
